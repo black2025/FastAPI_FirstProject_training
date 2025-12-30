@@ -1,12 +1,13 @@
 import random
-from fastapi import FastAPI
+from fastapi import FastAPI, status, HTTPException, Form, Body
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
 @app.get("/")
 
 async def root():
-    return {"message": "Hello World"}
+    return JSONResponse(content={"message": "Hello World"}, status_code=status.HTTP_200_OK)
 
 items_list = [
     {"id": 1, "name": "John"},
@@ -29,29 +30,29 @@ async def read_item(item_id: int):
     for item in items_list:
         if item["id"] == item_id:
             return item
-    return {"detail": "Item not found"}
+    raise HTTPException(status_code=404, detail="Item not found")
 
 # make item
-@app.post("/items")
-def create_item(name: str):
+@app.post("/items", status_code=status.HTTP_201_CREATED)
+def create_item(name: str = Body(embed=True)):
     name_new = {"id": random.randint(8, 10), "name": name}
     items_list.append(name_new)
     return items_list
 
 # update whole item
-@app.put("/items/{item_id}")
-def update_item(item_id: int, name: str):
+@app.put("/items/{item_id}", status_code=status.HTTP_200_OK)
+def update_item(item_id: int, name: str = Form()):
     for item in items_list:
         if item["id"] == item_id:
             item["name"] = name
             return item
-    return {"detail": "Item not found"}
+    raise HTTPException(status_code=404, detail="Item not found")
 
 # remove item
-@app.delete("/items/{item_id}")
+@app.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item(item_id: int):
     for item in items_list:
         if item["id"] == item_id:
             items_list.remove(item)
             return item
-    return {"detail": "Item not found"}
+    raise HTTPException(status_code=404, detail="Item not found")
